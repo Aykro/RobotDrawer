@@ -14,6 +14,10 @@ using System.Windows.Input;
 using System.Xml.Linq;
 using RobotDrawer.Views;
 using RobotDrawer.Utils;
+using System.Windows.Ink;
+using System.Windows.Media;
+using System.Collections.Specialized;
+using System.Windows;
 
 namespace RobotDrawer.ViewModels
 {
@@ -29,6 +33,98 @@ namespace RobotDrawer.ViewModels
         {
             get { return "RobotDrawer"; }
         }
+
+        public bool BlackRadiobuttonChecked
+        {
+            get
+            {
+                return _blackRadiobuttonChecked;
+            }
+            set
+            {
+                if (_blackRadiobuttonChecked != value)
+                {
+                    _blackRadiobuttonChecked = value;
+                    PreprarePencilColour();
+                    OnPropertyChanged();
+                }
+            }
+        }
+        private bool _blackRadiobuttonChecked;
+        public bool RedRadiobuttonChecked
+        {
+            get
+            {
+                return _redRadiobuttonChecked;
+            }
+            set
+            {
+                if (_redRadiobuttonChecked != value)
+                {
+                    _redRadiobuttonChecked = value;
+                    PreprarePencilColour();
+                    OnPropertyChanged();
+                }
+            }
+        }
+        private bool _redRadiobuttonChecked;
+        public bool GreenRadiobuttonChecked
+        {
+            get
+            {
+                return _greenRadiobuttonChecked;
+            }
+            set
+            {
+                if (_greenRadiobuttonChecked != value)
+                {
+                    _greenRadiobuttonChecked = value;
+                    PreprarePencilColour();
+                    OnPropertyChanged();
+                }
+            }
+        }
+        private bool _greenRadiobuttonChecked;
+
+        private void PreprarePencilColour()
+        {
+            if (BlackRadiobuttonChecked)
+            {
+                DefaultDrawingAttributes.Color = Colors.Black;
+            }
+            if (RedRadiobuttonChecked)
+            {
+                DefaultDrawingAttributes.Color = Colors.Red;
+            }
+            if (GreenRadiobuttonChecked)
+            {
+                DefaultDrawingAttributes.Color = Colors.Green;
+            }
+            OnPropertyChanged("DefaultDrawingAttributes");
+        }
+
+        public DrawingAttributes DefaultDrawingAttributes
+        {
+            get
+            {
+                return _defaultDrawingAttributes;
+            }
+            set
+            {
+                _defaultDrawingAttributes = value;
+                OnPropertyChanged();
+            }
+        }
+        private DrawingAttributes _defaultDrawingAttributes = new DrawingAttributes();
+
+        public StrokeCollection Strokes
+        {
+            get
+            {
+                return _strokes;
+            }
+        }
+        private StrokeCollection _strokes;
         #endregion
 
         #region Constructors
@@ -36,16 +132,30 @@ namespace RobotDrawer.ViewModels
         {
             // DialogService is used to handle dialogs
             this.DialogService = new MvvmDialogs.DialogService();
+            _strokes = new StrokeCollection();
+            _strokes.StrokesChanged += OnStrokesChange;
         }
 
         #endregion
 
         #region Methods
+        private void OnStrokesChange(object sender, StrokeCollectionChangedEventArgs e)
+        {
 
+        }
         #endregion
 
         #region Commands
         public RelayCommand<object> SampleCmdWithArgument { get { return new RelayCommand<object>(OnSampleCmdWithArgument); } }
+
+        public ICommand ClearCanvaCommand { get { return new RelayCommand(ClearCanva, AlwaysTrue); } }
+
+        private void ClearCanva()
+        {
+            Application.Current.Dispatcher.Invoke(new Action(() => {
+                Strokes.Clear();
+            }));
+        }
 
         public ICommand SaveAsCmd { get { return new RelayCommand(OnSaveAsTest, AlwaysFalse); } }
         public ICommand SaveCmd { get { return new RelayCommand(OnSaveTest, AlwaysFalse); } }

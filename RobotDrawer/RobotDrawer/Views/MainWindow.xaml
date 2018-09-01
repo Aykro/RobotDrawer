@@ -9,17 +9,41 @@
         xmlns:localModels="clr-namespace:RobotDrawer.Models"
         xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
         xmlns:md="https://github.com/fantasticfiasco/mvvm-dialogs"
+        xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
+        xmlns:command="http://www.galasoft.ch/mvvmlight"
         md:DialogServiceViews.IsRegistered="True"
         mc:Ignorable="d"
-        Title="{Binding Title}" Height="350" Width="525"
+        Title="{Binding Title}" Height="768" Width="1024"
         WindowState="Normal">
 
     <Window.Resources>
+        <Style x:Key="ColourPickStyle"
+               TargetType="RadioButton">
+            <Setter Property="BorderBrush"
+                    Value="Gray"/>
+            <Setter Property="Height"
+                    Value="25"/>
+            <Setter Property="Width"
+                    Value="30"/>
+            <Setter Property="Cursor"
+                    Value="Pen"/>
+        </Style>
+        <Style x:Key="ShapeButtonStyle"
+               TargetType="RadioButton">
+            <Setter Property="BorderBrush"
+                    Value="Gray"/>
+            <Setter Property="Height"
+                    Value="25"/>
+            <Setter Property="Width"
+                    Value="60"/>
+            <Setter Property="Background"
+                    Value="GhostWhite"/>
+        </Style>
         <!-- Insert here your Data Templates -->
         <DataTemplate x:Key="SampleTemplate">
             <StackPanel/>
         </DataTemplate>
-        
+
     </Window.Resources>
     <Window.InputBindings>
         <!-- Example of Keyboard shortcuts -->
@@ -34,8 +58,8 @@
         <!-- File Menu -->
         <Menu DockPanel.Dock="Top" Margin="0,0,0.4,0">
             <MenuItem Header="File">
-                <MenuItem Header="New" Command="{Binding NewCmd}" InputGestureText="Ctrl+N" />
-                <MenuItem Header="Open" Command="{Binding OpenCmd}" InputGestureText="Ctrl+O" />
+                <MenuItem Header="New" Command="{Binding OnPropertyChangeTestCommand}" InputGestureText="Ctrl+N" />
+                <MenuItem Header="Clear all" Command="{Binding ClearCanvaCommand}" InputGestureText="Ctrl+O" />
                 <MenuItem Header="Save" Command="{Binding SaveCmd}" InputGestureText="Ctrl+S" />
                 <MenuItem Header="Save As" Command="{Binding SaveAsCmd}" InputGestureText="Ctrl+Shift+S"/>
                 <Separator />
@@ -45,6 +69,61 @@
         </Menu>
 
         <StackPanel>
+            <DockPanel>
+                <ToolBar Name="ToolBar"
+                 DockPanel.Dock="Top"
+                 Height="30">
+                    <RadioButton x:Name ="BlackButton" Background="Black" 
+                                 Style ="{StaticResource ColourPickStyle}" 
+                                 IsChecked="{Binding BlackRadiobuttonChecked}"/>
+                    <RadioButton Name ="RedButton" Background="Red"
+                                 Style="{StaticResource ColourPickStyle}"
+                                 IsChecked="{Binding RedRadiobuttonChecked}"/>
+                    <RadioButton Name = "GreenButton" Background="Green"
+                                 Style="{StaticResource ColourPickStyle}"
+                                 IsChecked="{Binding GreenRadiobuttonChecked}"/>
+
+                    <Separator Background="Gray" Height="25" Width="1"/>
+
+                    <RadioButton Name="PenButton" Content="Pen"
+                         GroupName="ShapeGroup" Style="{StaticResource ShapeButtonStyle}"/>
+                    <RadioButton x:Name="LineButton"  Content="Line" 
+                         GroupName="ShapeGroup" Style="{StaticResource ShapeButtonStyle}"/>
+                    <RadioButton x:Name="EllipseButton"
+                         Style="{StaticResource ShapeButtonStyle}"
+                         Content="Ellipse" GroupName="ShapeGroup"/>
+                    <RadioButton x:Name="RectangleButton"  
+                         Style="{StaticResource ShapeButtonStyle}"
+                         Content="Rectangle" GroupName="ShapeGroup"/>
+                    <RadioButton Name="ConnectButton"
+                         Style="{StaticResource ShapeButtonStyle}"
+                         Content="Connect" />
+                    <RadioButton Name="DisconnectButton"
+                         Style="{StaticResource ShapeButtonStyle}"
+                         Content="Disconnect" />
+                    <RadioButton Name="Eraser"
+                         Style="{StaticResource ShapeButtonStyle}"
+                         Content="Eraser"/>
+                </ToolBar>
+                <InkCanvas x:Name="MyCanvas" Background="White" Margin="10" 
+                           Strokes="{Binding Strokes}"
+                           DefaultDrawingAttributes="{Binding DefaultDrawingAttributes, Mode=OneWay}">
+                    <InkCanvas.ContextMenu>
+                        <ContextMenu>
+                            <MenuItem Header="Clear canva"/>
+                        </ContextMenu>
+                    </InkCanvas.ContextMenu>
+                    <i:Interaction.Triggers>
+                        <i:EventTrigger EventName="ContextMenuOpening">
+                            <i:InvokeCommandAction Command="{Binding ClearCanvaCommand}"/>
+                        </i:EventTrigger>
+                        <i:EventTrigger EventName="MouseDown">
+                            <i:InvokeCommandAction Command="{Binding CanvasMouseDownCommand}" />
+                        </i:EventTrigger>
+                    </i:Interaction.Triggers>
+                </InkCanvas>
+
+            </DockPanel>
             <!-- Place here your content -->
         </StackPanel>
     </DockPanel>
