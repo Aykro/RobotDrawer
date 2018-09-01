@@ -152,11 +152,40 @@ namespace RobotDrawer.ViewModels
 
         private void ClearCanva()
         {
-            Application.Current.Dispatcher.Invoke(new Action(() => {
+            Application.Current.Dispatcher.Invoke(new Action(() =>
+            {
                 Strokes.Clear();
             }));
         }
 
+        private Stroke lastStroke = null;
+        private void MouseDownCommandExecuted(MouseButtonEventArgs e)
+        {
+            lastStroke = new Stroke(new StylusPointCollection() {
+                new StylusPoint(e.GetPosition((IInputElement)e.Source).X, e.GetPosition((IInputElement)e.Source).Y)
+            });
+            Strokes.Add(lastStroke);
+        }
+        private void MouseMoveCommandExecuted(MouseButtonEventArgs e)
+        {
+            if (lastStroke != null)
+            {
+                var startPoint = lastStroke.StylusPoints.FirstOrDefault();
+                StylusPointCollection newLineStrokes = new StylusPointCollection()
+                {
+                    startPoint,
+                    new StylusPoint(e.GetPosition((IInputElement)e.Source).X, e.GetPosition((IInputElement)e.Source).Y)
+                };
+                lastStroke.StylusPoints = newLineStrokes;
+            }
+        }
+        private void MouseUpCommandExecuted()
+        {
+            lastStroke = null;
+        }
+        public ICommand MouseUpCommand {  get { return new RelayCommand(MouseUpCommandExecuted); } }
+        public ICommand MouseDownCommand { get { return new ActionCommand<MouseButtonEventArgs>(MouseDownCommandExecuted); } }
+        public ICommand MouseMoveCommand { get { return new ActionCommand<MouseButtonEventArgs>(MouseMoveCommandExecuted); } }
         public ICommand SaveAsCmd { get { return new RelayCommand(OnSaveAsTest, AlwaysFalse); } }
         public ICommand SaveCmd { get { return new RelayCommand(OnSaveTest, AlwaysFalse); } }
         public ICommand NewCmd { get { return new RelayCommand(OnNewTest, AlwaysFalse); } }

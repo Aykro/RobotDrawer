@@ -108,7 +108,9 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Behaviours\EventToCommandBehaviour.cs" />
     <Compile Include="Models\SampleModel.cs" />
+    <Compile Include="Utils\ActionCommand.cs" />
     <Compile Include="Utils\RelayCommand.cs" />
     <Compile Include="ViewModels\AboutViewModel.cs" />
     <Compile Include="ViewModels\MainViewModel.cs" />
