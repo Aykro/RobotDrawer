@@ -45,6 +45,10 @@
     <Reference Include="GalaSoft.MvvmLight.Platform, Version=5.4.1.0, Culture=neutral, PublicKeyToken=5f873c45e98af8a1, processorArchitecture=MSIL">
       <HintPath>..\..\packages\MvvmLightLibs.5.4.1\lib\net45\GalaSoft.MvvmLight.Platform.dll</HintPath>
     </Reference>
+    <Reference Include="Interop.OPCAutomation">
+      <HintPath>..\..\..\..\..\..\Downloads\Interop.OPCAutomation.dll</HintPath>
+      <EmbedInteropTypes>True</EmbedInteropTypes>
+    </Reference>
     <Reference Include="log4net, Version=2.0.8.0, Culture=neutral, PublicKeyToken=669e0ddf0bb1aa2a, processorArchitecture=MSIL">
       <HintPath>..\..\packages\log4net.2.0.8\lib\net45-full\log4net.dll</HintPath>
     </Reference>
@@ -109,8 +113,20 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Behaviours\EventToCommandBehaviour.cs" />
-    <Compile Include="Models\SampleModel.cs" />
-    <Compile Include="Utils\ActionCommand.cs" />
+    <Compile Include="Models\ABBManager.cs" />
+    <Compile Include="Models\CoordinateScaler.cs" />
+    <Compile Include="Models\Exceptions\InvalidOPCItemIDException.cs" />
+    <Compile Include="Models\Interfaces\IManageOPC.cs" />
+    <Compile Include="Models\ObjectToDraw.cs" />
+    <Compile Include="Models\PointConverter.cs" />
+    <Compile Include="Models\QueueExtensions.cs" />
+    <Compile Include="Models\EventArgs\RobotWorkEventArgs.cs" />
+    <Compile Include="Models\Shapes.cs" />
+    <Compile Include="Properties\ControllerConfig.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+      <DependentUpon>ControllerConfig.settings</DependentUpon>
+    </Compile>
     <Compile Include="Utils\RelayCommand.cs" />
     <Compile Include="ViewModels\AboutViewModel.cs" />
     <Compile Include="ViewModels\MainViewModel.cs" />
@@ -131,10 +147,12 @@
   <ItemGroup>
     <None Include="App.config" />
     <None Include="packages.config" />
+    <None Include="Properties\ControllerConfig.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>ControllerConfig.Designer.cs</LastGenOutput>
+    </None>
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Controls\" />
-  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

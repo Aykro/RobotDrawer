@@ -1,39 +1,71 @@
 ﻿using MvvmDialogs;
-using log4net;
-using MvvmDialogs.FrameworkDialogs.OpenFile;
-using MvvmDialogs.FrameworkDialogs.SaveFile;
-using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Reflection;
-using System.Windows.Input;
-using System.Xml.Linq;
-using RobotDrawer.Views;
+using RobotDrawer.Models;
+using RobotDrawer.Models.Exceptions;
 using RobotDrawer.Utils;
-using System.Windows.Ink;
-using System.Windows.Media;
-using System.Collections.Specialized;
+using RobotDrawer.Views;
+using System;
+using System.Linq;
+using System.Timers;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Ink;
+using System.Windows.Input;
+using System.Windows.Media;
 
 namespace RobotDrawer.ViewModels
 {
     class MainViewModel : ViewModelBase
     {
-        #region Parameters
+        #region Parameters       
         private readonly IDialogService DialogService;
-
-        /// <summary>
-        /// Title of the application, as displayed in the top bar of the window
-        /// </summary>
-        public string Title
+        private Timer penSampling = new Timer()
         {
-            get { return "RobotDrawer"; }
+            Interval = 1,
+            Enabled = true,
+            AutoReset = true
+    };
+        #region Drawing Properties
+        private Func<StylusPoint[], StylusPointCollection> DrawShape;
+        private Stroke lastStroke = null;
+        private StylusPoint startPoint, endPoint;
+        private StylusPointCollection newStrokes;
+        public DrawingAttributes DefaultDrawingAttributes
+        {
+            get
+            {
+                return _defaultDrawingAttributes;
+            }
+            set
+            {
+                _defaultDrawingAttributes = value;
+                OnPropertyChanged();
+            }
         }
+        private DrawingAttributes _defaultDrawingAttributes = new DrawingAttributes();
+        private InkCanvasEditingMode _editingMode;
+        public InkCanvasEditingMode EditingMode
+        {
+            get
+            {
+                return _editingMode;
+            }
+            set
+            {
+                _editingMode = value;
+            }
+        }
+        public StrokeCollection Strokes
+        {
+            get
+            {
+                return _strokes;
+            }
+        }
+        private StrokeCollection _strokes;
 
+        #endregion
+
+        #region ButtonProperties
         public bool BlackRadiobuttonChecked
         {
             get
@@ -45,7 +77,7 @@ namespace RobotDrawer.ViewModels
                 if (_blackRadiobuttonChecked != value)
                 {
                     _blackRadiobuttonChecked = value;
-                    PreprarePencilColour();
+                    ChangePencilColour();
                     OnPropertyChanged();
                 }
             }
@@ -62,7 +94,7 @@ namespace RobotDrawer.ViewModels
                 if (_redRadiobuttonChecked != value)
                 {
                     _redRadiobuttonChecked = value;
-                    PreprarePencilColour();
+                    ChangePencilColour();
                     OnPropertyChanged();
                 }
             }
@@ -79,14 +111,249 @@ namespace RobotDrawer.ViewModels
                 if (_greenRadiobuttonChecked != value)
                 {
                     _greenRadiobuttonChecked = value;
-                    PreprarePencilColour();
+                    ChangePencilColour();
                     OnPropertyChanged();
                 }
             }
         }
         private bool _greenRadiobuttonChecked;
 
-        private void PreprarePencilColour()
+        private bool _lineButtonChecked;
+        public bool LineButtonChecked
+        {
+            get { return _lineButtonChecked; }
+            set
+            {
+                if (_lineButtonChecked != value)
+                {
+                    _lineButtonChecked = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+        private bool _rectangleButtonChecked;
+        public bool RectangleButtonChecked
+        {
+            get { return _rectangleButtonChecked; }
+            set
+            {
+                if (_rectangleButtonChecked != value)
+                {
+                    _rectangleButtonChecked = value;
+                    ChangeEditingMode();
+                    OnPropertyChanged();
+                }
+            }
+        }
+        private bool _circleButtonChecked;
+        public bool CircleButtonChecked
+        {
+            get { return _circleButtonChecked; }
+            set
+            {
+                if (_circleButtonChecked != value)
+                {
+                    _circleButtonChecked = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+        private bool _eraserButtonChecked;
+        public bool EraserButtonChecked
+        {
+            get { return _eraserButtonChecked; }
+            set
+            {
+                if (_eraserButtonChecked != value)
+                {
+                    _eraserButtonChecked = value;
+                    OnPropertyChanged();
+                    ChangeEditingMode();
+                }
+            }
+        }
+        private bool _penButtonChecked;
+        public bool PenButtonChecked
+        {
+            get { return _penButtonChecked; }
+            set
+            {
+                if (_penButtonChecked != value)
+                {
+                    _penButtonChecked = value;
+                   // penSampling.Elapsed += new ElapsedEventHandler(OnSampleEvent);
+                    ChangeEditingMode();
+                    OnPropertyChanged();
+                }
+            }
+        }
+        private bool _connectButtonChecked;
+        public bool ConnectButtonChecked
+        {
+            get { return _connectButtonChecked; }
+            set
+            {
+                if (_connectButtonChecked != value)
+                {                
+                    Connect();
+                    if(IsRobotConnected == true)
+                    {
+                        _connectButtonChecked = value;
+                        OnPropertyChanged();
+                    }                  
+                }
+            }
+        }
+        private bool _disconnectButtonChecked;
+        public bool DisconnectButtonChecked
+        {
+            get { return _disconnectButtonChecked; }
+            set
+            {
+                if (_disconnectButtonChecked != value)
+                {
+                    
+                    Disconnect();
+                    if (IsRobotConnected == false)
+                    {
+                        _disconnectButtonChecked = value;
+                        OnPropertyChanged();
+                    }                  
+                }
+            }
+        }
+        private bool _isRobotConnected;
+        public bool IsRobotConnected
+        {
+            get { return _isRobotConnected; }
+            set
+            {
+                _isRobotConnected = value;
+            }
+        }
+
+        #endregion
+
+        private bool AlwaysTrue() { return true; }
+        private bool CanExecuteShapes() {
+            if (EditingMode != InkCanvasEditingMode.None)
+                return false;
+            else return true;
+           }
+
+        /// <summary>
+        /// Title of the application, as displayed in the top bar of the window
+        /// </summary>
+        public string Title
+        {
+            get { return "RobotDrawer"; }
+        }
+
+        #endregion
+
+        #region Constructors
+        public MainViewModel()
+        {
+            // DialogService is used to handle dialogs
+            this.DialogService = new MvvmDialogs.DialogService();
+            _strokes = new StrokeCollection();
+            //_strokes.StrokesChanged += OnStrokesChange;
+        }
+
+        #endregion
+
+        #region Methods
+        private void MouseDownCommandExecuted(MouseEventArgs e)
+        {
+            if(EditingMode==InkCanvasEditingMode.None)
+            {
+                startPoint = new StylusPoint(e.GetPosition((InkCanvas)e.Source).X, 
+                    e.GetPosition((InkCanvas)e.Source).Y);
+                lastStroke = new Stroke(new StylusPointCollection() { startPoint });
+                lastStroke.DrawingAttributes.Color = DefaultDrawingAttributes.Color;
+                Strokes.Add(lastStroke);
+            }
+            else
+            {
+
+            }
+        }
+        private void MouseMoveCommandExecuted(MouseEventArgs e)
+        {
+            if (EditingMode == InkCanvasEditingMode.None)
+            {
+                newStrokes = null;
+                endPoint = new StylusPoint(e.GetPosition((InkCanvas)e.Source).X, e.GetPosition((InkCanvas)e.Source).Y);
+                if (lastStroke != null)
+                {
+                    var _points = new StylusPoint[2] { startPoint, endPoint };
+                    if (LineButtonChecked)
+                    {
+                        DrawShape = Shapes.DrawLine;
+                        newStrokes = DrawShape(_points);
+                    }
+                    if (RectangleButtonChecked)
+                    {
+                        DrawShape = Shapes.DrawRectangle;
+                        newStrokes = DrawShape(_points);
+                    }
+                    if (CircleButtonChecked)
+                    {
+                        DrawShape = Shapes.DrawCircle;
+                        newStrokes = DrawShape(_points);
+                    }
+                    if (PenButtonChecked)
+                    {
+                        //    newStrokes = new StylusPointCollection();
+                        //    if(e.LeftButton == MouseButtonState.Pressed)
+                        //    {
+                        //       // penSampling.Start();
+                        //       // penSampling.
+                        //        //newStrokes.Add(new StylusPoint(endPoint.X, endPoint.Y));
+                        //    }
+                        //    else
+                        //    {
+                        //        penSampling.Stop();
+                        //    }
+                    }
+                }
+                if (newStrokes != null) lastStroke.StylusPoints = newStrokes;
+            }
+        }
+        private void OnSampleEvent(object source, ElapsedEventArgs e)
+        {
+            if (newStrokes == null) newStrokes = new StylusPointCollection();
+            newStrokes.Add(new StylusPoint(endPoint.X, endPoint.Y));
+        }
+        private void MouseUpCommandExecuted()
+        {
+            if (lastStroke != null)
+            {
+                var CanvasSize = App.GetCanvasSize();
+                var robotCoordinates = CoordinateScaler.ToRobotCoordinates(Strokes.Last(), CanvasSize[0], CanvasSize[1]);
+                var robotLines = Models.PointConverter.ToLine(robotCoordinates);
+                //ABBManager.Instance.ShapesPending.Enqueue(new ObjectToDraw(
+                //    robotLines, DefaultDrawingAttributes.Color));
+                lastStroke = null;
+            }
+        }
+        private void ChangeEditingMode()
+        {
+            if (EraserButtonChecked)
+            {
+                EditingMode = InkCanvasEditingMode.EraseByPoint;
+            }
+            else if (PenButtonChecked)
+            {
+                EditingMode = InkCanvasEditingMode.Ink;
+            }
+            else
+            {
+                EditingMode = InkCanvasEditingMode.None;
+            }
+            OnPropertyChanged("EditingMode");
+        }
+        private void ChangePencilColour()
         {
             if (BlackRadiobuttonChecked)
             {
@@ -102,145 +369,70 @@ namespace RobotDrawer.ViewModels
             }
             OnPropertyChanged("DefaultDrawingAttributes");
         }
-
-        public DrawingAttributes DefaultDrawingAttributes
-        {
-            get
-            {
-                return _defaultDrawingAttributes;
-            }
-            set
-            {
-                _defaultDrawingAttributes = value;
-                OnPropertyChanged();
-            }
-        }
-        private DrawingAttributes _defaultDrawingAttributes = new DrawingAttributes();
-
-        public StrokeCollection Strokes
-        {
-            get
-            {
-                return _strokes;
-            }
-        }
-        private StrokeCollection _strokes;
-        #endregion
-
-        #region Constructors
-        public MainViewModel()
-        {
-            // DialogService is used to handle dialogs
-            this.DialogService = new MvvmDialogs.DialogService();
-            _strokes = new StrokeCollection();
-            _strokes.StrokesChanged += OnStrokesChange;
-        }
-
-        #endregion
-
-        #region Methods
-        private void OnStrokesChange(object sender, StrokeCollectionChangedEventArgs e)
-        {
-
-        }
-        #endregion
-
-        #region Commands
-        public RelayCommand<object> SampleCmdWithArgument { get { return new RelayCommand<object>(OnSampleCmdWithArgument); } }
-
-        public ICommand ClearCanvaCommand { get { return new RelayCommand(ClearCanva, AlwaysTrue); } }
-
-        private void ClearCanva()
+        private void ClearCanvas()
         {
             Application.Current.Dispatcher.Invoke(new Action(() =>
             {
                 Strokes.Clear();
             }));
         }
-
-        private Stroke lastStroke = null;
-        private void MouseDownCommandExecuted(MouseButtonEventArgs e)
+        private void Connect()
         {
-            lastStroke = new Stroke(new StylusPointCollection() {
-                new StylusPoint(e.GetPosition((IInputElement)e.Source).X, e.GetPosition((IInputElement)e.Source).Y)
-            });
-            Strokes.Add(lastStroke);
-        }
-        private void MouseMoveCommandExecuted(MouseButtonEventArgs e)
-        {
-            if (lastStroke != null)
+            try
             {
-                var startPoint = lastStroke.StylusPoints.FirstOrDefault();
-                StylusPointCollection newLineStrokes = new StylusPointCollection()
+                if (!IsRobotConnected)
                 {
-                    startPoint,
-                    new StylusPoint(e.GetPosition((IInputElement)e.Source).X, e.GetPosition((IInputElement)e.Source).Y)
-                };
-                lastStroke.StylusPoints = newLineStrokes;
+                    ABBManager.Instance.Connect();
+                    IsRobotConnected = true;
+                    //OnPropertyChanged("IsEnabled");
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Connection error! Please contact support.");
+                IsRobotConnected = false;
             }
         }
-        private void MouseUpCommandExecuted()
+        private void Disconnect()
         {
-            lastStroke = null;
+            if (IsRobotConnected)
+            {
+                ABBManager.Instance.Disconnect();
+                IsRobotConnected = false;
+                OnPropertyChanged("IsEnabled");
+            }
         }
-        public ICommand MouseUpCommand {  get { return new RelayCommand(MouseUpCommandExecuted); } }
-        public ICommand MouseDownCommand { get { return new ActionCommand<MouseButtonEventArgs>(MouseDownCommandExecuted); } }
-        public ICommand MouseMoveCommand { get { return new ActionCommand<MouseButtonEventArgs>(MouseMoveCommandExecuted); } }
-        public ICommand SaveAsCmd { get { return new RelayCommand(OnSaveAsTest, AlwaysFalse); } }
-        public ICommand SaveCmd { get { return new RelayCommand(OnSaveTest, AlwaysFalse); } }
-        public ICommand NewCmd { get { return new RelayCommand(OnNewTest, AlwaysFalse); } }
-        public ICommand OpenCmd { get { return new RelayCommand(OnOpenTest, AlwaysFalse); } }
+        //private void ReadConfigFile()
+        //{
+        //    var settings = new OpenFileDialogSettings
+        //    {
+        //        Title = "Open",
+        //        Filter = "(.txt)|*.txt",
+        //        CheckFileExists = false
+        //    };
+
+        //    bool? success = DialogService.ShowOpenFileDialog(this, settings);
+        //    if (success == true)
+        //    {
+        //        string[] _controllerConfigLines = File.ReadAllLines(settings.FileName);
+        //        Log.Info("Opening file: " + settings.FileName);
+        //    }
+        //}
+        #endregion
+
+        #region Commands
+        public RelayCommand<object> SampleCmdWithArgument { get { return new RelayCommand<object>(OnSampleCmdWithArgument); } }
+
+        public ICommand MouseUpCommand { get { return new RelayCommand(MouseUpCommandExecuted); } }
+        public ICommand MouseDownCommand { get { return new RelayCommand<MouseEventArgs>(MouseDownCommandExecuted); } }
+        public ICommand MouseMoveCommand { get { return new RelayCommand<MouseEventArgs>(MouseMoveCommandExecuted); } }
+        public ICommand ClearCanvasCommand { get { return new RelayCommand(ClearCanvas, AlwaysTrue); } }
         public ICommand ShowAboutDialogCmd { get { return new RelayCommand(OnShowAboutDialog, AlwaysTrue); } }
         public ICommand ExitCmd { get { return new RelayCommand(OnExitApp, AlwaysTrue); } }
-
-        private bool AlwaysTrue() { return true; }
-        private bool AlwaysFalse() { return false; }
 
         private void OnSampleCmdWithArgument(object obj)
         {
             // TODO
-        }
-
-        private void OnSaveAsTest()
-        {
-            var settings = new SaveFileDialogSettings
-            {
-                Title = "Save As",
-                Filter = "Sample (.xml)|*.xml",
-                CheckFileExists = false,
-                OverwritePrompt = true
-            };
-
-            bool? success = DialogService.ShowSaveFileDialog(this, settings);
-            if (success == true)
-            {
-                // Do something
-                Log.Info("Saving file: " + settings.FileName);
-            }
-        }
-        private void OnSaveTest()
-        {
-            // TODO
-        }
-        private void OnNewTest()
-        {
-            // TODO
-        }
-        private void OnOpenTest()
-        {
-            var settings = new OpenFileDialogSettings
-            {
-                Title = "Open",
-                Filter = "Sample (.xml)|*.xml",
-                CheckFileExists = false
-            };
-
-            bool? success = DialogService.ShowOpenFileDialog(this, settings);
-            if (success == true)
-            {
-                // Do something
-                Log.Info("Opening file: " + settings.FileName);
-            }
         }
         private void OnShowAboutDialog()
         {
@@ -250,7 +442,7 @@ namespace RobotDrawer.ViewModels
         }
         private void OnExitApp()
         {
-            System.Windows.Application.Current.MainWindow.Close();
+            Application.Current.MainWindow.Close();
         }
         #endregion
 

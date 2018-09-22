@@ -1,24 +1,22 @@
 ﻿using log4net;
 using System.Reflection;
 using System.Windows;
-using System.Windows.Ink;
-using System.Windows.Input;
+using System.Windows.Controls;
 
 namespace RobotDrawer.Views
 {
+
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
     public partial class MainWindow : Window
     {
         private static readonly ILog Log = log4net.LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
-        private Point startPoint, endPoint;
-        private Stroke temp;
         public MainWindow()
         {
             InitializeComponent();
             this.Closing += MainView_Closing;
-            MyCanvas.EditingMode = System.Windows.Controls.InkCanvasEditingMode.None;
+            MyCanvas.EditingMode = InkCanvasEditingMode.None;          
         }
 
         private void MainView_Closing(object sender, System.ComponentModel.CancelEventArgs e)

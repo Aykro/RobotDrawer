@@ -1,16 +1,11 @@
 ﻿using log4net;
-using System;
-using System.Collections.Generic;
-using System.Configuration;
-using System.Data;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
-using System.Reflection;
-using System.Windows;
-using System.ComponentModel;
 using RobotDrawer.ViewModels;
 using RobotDrawer.Views;
+using System;
+using System.ComponentModel;
+using System.IO;
+using System.Reflection;
+using System.Windows;
 
 namespace RobotDrawer
 {
@@ -18,7 +13,6 @@ namespace RobotDrawer
     {
         private static readonly ILog Log = log4net.LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
         private static MainWindow app;
-
         private void Application_Startup(object sender, StartupEventArgs e)
         {
             Log.Info("Application Startup");
@@ -33,7 +27,6 @@ namespace RobotDrawer
             var context = new MainViewModel();
             app.DataContext = context;
             app.Show();
-
             if (e.Args.Length == 1) //make sure an argument is passed
             {
                 Log.Info("File type association: " + e.Args[0]);
@@ -44,6 +37,14 @@ namespace RobotDrawer
                     // ((MainViewModel)app.DataContext).OpenFile(file.FullName);
                 }
             }
+        }
+        public static double[] GetCanvasSize()
+        {
+            return new double[2]
+            {
+                app.MyCanvas.ActualHeight,
+                app.MyCanvas.ActualWidth
+            };
         }
 
         static void UnhandledExceptionOccured(object sender, UnhandledExceptionEventArgs args)

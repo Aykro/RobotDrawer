@@ -1,0 +1,42 @@
+﻿<?xml version='1.0' encoding='utf-8'?>
+<SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="RobotDrawer.Properties" GeneratedClassName="ControllerConfig">
+  <Profiles />
+  <Settings>
+    <Setting Name="OPCServerName" Type="System.String" Scope="User">
+      <Value Profile="(Default)">ABB.IRC5.OPC.Server.DA</Value>
+    </Setting>
+    <Setting Name="robotItemLinesArray" Type="System.String" Scope="User">
+      <Value Profile="(Default)">1200-100530.RAPID.T_ROB1.OPCDraw.SetOfLines</Value>
+    </Setting>
+    <Setting Name="robotItemLinesToDrawCount" Type="System.String" Scope="User">
+      <Value Profile="(Default)">1200-100530.RAPID.T_ROB1.OPCDraw.nCountOfLines</Value>
+    </Setting>
+    <Setting Name="robotItemCurrentlyDrawnLine" Type="System.String" Scope="User">
+      <Value Profile="(Default)">1200-100530.RAPID.T_ROB1.OPCDraw.nCountOfCurrDrawLine</Value>
+    </Setting>
+    <Setting Name="robotItemReadyToDraw" Type="System.String" Scope="User">
+      <Value Profile="(Default)">1200-100530.RAPID.T_ROB1.OPCDraw.ReadyToDraw</Value>
+    </Setting>
+    <Setting Name="robotItemDraw" Type="System.String" Scope="User">
+      <Value Profile="(Default)">1200-100530.RAPID.T_ROB1.OPCDraw.Draw</Value>
+    </Setting>
+    <Setting Name="robotItemClearAll" Type="System.String" Scope="User">
+      <Value Profile="(Default)">1200-100530.RAPID.T_ROB1.OPCDraw.ClearAll</Value>
+    </Setting>
+    <Setting Name="robotItemChangeTool" Type="System.String" Scope="User">
+      <Value Profile="(Default)">1200-100530.RAPID.T_ROB1.OPCDraw.ChangeTool</Value>
+    </Setting>
+    <Setting Name="robotItemArraySize" Type="System.String" Scope="User">
+      <Value Profile="(Default)">360</Value>
+    </Setting>
+    <Setting Name="robotItemToolOffsetArray" Type="System.String" Scope="User">
+      <Value Profile="(Default)">1200-100530.RAPID.T_ROB1.OPCDraw.xOffsetChangeColour</Value>
+    </Setting>
+    <Setting Name="robotItemGrabMarker" Type="System.String" Scope="User">
+      <Value Profile="(Default)">1200-100530.RAPID.T_ROB1.OPCDraw.GrabMarker</Value>
+    </Setting>
+    <Setting Name="robotItemGrabEraser" Type="System.String" Scope="User">
+      <Value Profile="(Default)">1200-100530.RAPID.T_ROB1.OPCDraw.GrabEraser</Value>
+    </Setting>
+  </Settings>
+</SettingsFile>
