@@ -1,4 +1,6 @@
 ﻿using OPCAutomation;
+using System;
+using System.Threading.Tasks;
 using System.Windows.Media;
 
 namespace RobotDrawer.Models
@@ -10,6 +12,6 @@ namespace RobotDrawer.Models
         void Disconnect();
         bool IsRobotIdle();
         void ChangeRobotTool(Color currentTool);
-        void RunDrawLinesProcedure(object sender, RobotWorkEventArgs e);
+        void RunDrawLinesProcedure();
     }
 }

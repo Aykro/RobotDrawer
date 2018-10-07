@@ -27,7 +27,7 @@
       <Value Profile="(Default)">1200-100530.RAPID.T_ROB1.OPCDraw.ChangeTool</Value>
     </Setting>
     <Setting Name="robotItemArraySize" Type="System.String" Scope="User">
-      <Value Profile="(Default)">360</Value>
+      <Value Profile="(Default)">100</Value>
     </Setting>
     <Setting Name="robotItemToolOffsetArray" Type="System.String" Scope="User">
       <Value Profile="(Default)">1200-100530.RAPID.T_ROB1.OPCDraw.xOffsetChangeColour</Value>

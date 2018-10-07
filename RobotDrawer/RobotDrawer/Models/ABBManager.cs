@@ -1,6 +1,10 @@
 ﻿using OPCAutomation;
 using RobotDrawer.Properties;
 using System;
+using System.Diagnostics;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Media;
 
 namespace RobotDrawer.Models
@@ -10,28 +14,29 @@ namespace RobotDrawer.Models
         #region Constructors
         static ABBManager() { }
         private ABBManager(string OPCServerName, string linesArray, string linesToDrawCount,
-            string doneLinesCount, string ReadyToDraw , string Draw, string ChangeTool,
+            string doneLinesCount, string ReadyToDraw, string Draw, string ChangeTool,
             string ClearAll, int linesArraySize)
         {
+            RobotManagerThread = new Thread(() => RunDrawLinesProcedure());
             OpcServer = new OPCServer();
-            OpcServer.Connect(OPCServerName, "");
+            //OpcServer.Connect(OPCServerName, "");
 
-            OpcGroup = OpcServer.OPCGroups.Add();
-            OpcGroup.UpdateRate = 50;
-            OpcGroup.IsActive = true;
-            OpcGroup.IsSubscribed = true;
+            //OpcGroup = OpcServer.OPCGroups.Add();
+            //OpcGroup.UpdateRate = 50;
+            //OpcGroup.IsActive = true;
+            //OpcGroup.IsSubscribed = true;
 
-            this.OPCServerName = OPCServerName;
-            this.LinesArray = RegisterItem(linesArray);
-            this.LinesArraySize = linesArraySize;
-            this.LinesToDrawCount = RegisterItem(linesToDrawCount);
-            this.DoneLinesCount = RegisterItem(doneLinesCount);
-            this.ReadyToDraw = RegisterItem(ReadyToDraw);
-            this.Draw = RegisterItem(Draw);
-            this.ChangeTool = RegisterItem(ChangeTool);
-            this.ClearAll = RegisterItem(ClearAll);
-            this.OPCServerName = OPCServerName;
-            dropOffset = 0.0;
+            //this.OPCServerName = OPCServerName;
+            //this.LinesArray = RegisterItem(linesArray);
+            //this.LinesArraySize = linesArraySize;
+            //this.LinesToDrawCount = RegisterItem(linesToDrawCount);
+            //this.DoneLinesCount = RegisterItem(doneLinesCount);
+            //this.ReadyToDraw = RegisterItem(ReadyToDraw);
+            //this.Draw = RegisterItem(Draw);
+            //this.ChangeTool = RegisterItem(ChangeTool);
+            //this.ClearAll = RegisterItem(ClearAll);
+            //this.OPCServerName = OPCServerName;
+            //dropOffset = 0.0;
             IsEraserHeld = false;
         }
         #endregion
@@ -49,6 +54,7 @@ namespace RobotDrawer.Models
                          Int32.Parse(ControllerConfig.Default.robotItemArraySize));
         public static ABBManager Instance { get { return instance; } }
         public QueueExtensions ShapesPending = new QueueExtensions();
+        public Thread RobotManagerThread;
         private readonly string OPCServerName;
         private readonly OPCServer OpcServer;
         private readonly OPCGroup OpcGroup;
@@ -84,12 +90,14 @@ namespace RobotDrawer.Models
         }
         public void Connect()
         {
-            //OpcServer.Connect(OPCServerName, "");
-            ShapesPending.QueueNotEmpty += new EventHandler<RobotWorkEventArgs>(RunDrawLinesProcedure);
+            // OpcServer.Connect(OPCServerName, "");
+            //ShapesPending.QueueNotEmpty += async (s, e) => await RunDrawLinesProcedure(s, e);  //new EventHandler<RobotWorkEventArgs>(RunDrawLinesProcedure);
+            //await RunMalowanie();
         }
         public void Disconnect()
         {
-            OpcServer.Disconnect();
+            RobotManagerThread.Suspend();
+            //OpcServer.Disconnect();
         }
         public bool IsRobotIdle()
         {
@@ -107,41 +115,66 @@ namespace RobotDrawer.Models
         {
             GrabEraser.Write(true);
         }
+        private void RunClearAllProcedure()
+        {
+            ClearAll.Write(true);
+        }
         public void StartDraw()
         {
             Draw.Write(true);
         }
-        public void RunDrawLinesProcedure(object sender, RobotWorkEventArgs e)
+        public void RunDrawLinesProcedure()
         {
-            var coordinates = e.ObjectToDraw.Lines;
-            var currentTool = e.ObjectToDraw.Colour;
-            if (currentTool != LastTool) ChangeRobotTool(currentTool);
-            var lines = new object[LinesArraySize];
-            for (int i = 0; i < LinesArraySize; i++)
-            {
-                if (i >= coordinates.GetLength(0))                       // Get length of first dimension, it represents number of lines
+                try
                 {
-                    lines[i] = CreateLine(0, 0, 0, 0);
-                }
-                else
-                {
-                    lines[i] = CreateLine(coordinates[i, 0], coordinates[i, 1], coordinates[i, 2], coordinates[i, 3]);
-                }
-            }
-            LinesArray.Write(lines);
-            LinesToDrawCount.Write(coordinates.GetLength(0));
-            DoneLinesCount.Write(1);
-            StartDraw();
-            while (!IsRobotIdle())
-            {
+                    while (ShapesPending.Count > 0)
+                    {
+                        var objectToDraw = ShapesPending.Dequeue();
+                        Thread.Sleep(2000);
+                        if (objectToDraw.Colour != LastTool)
+                        {
+                            //ChangeRobotTool(objectToDraw.Colour);
+                        }
+                        if (objectToDraw.EraseAll == true)
+                        {
+                            //RunClearAllProcedure();
+                        }
+                        else
+                        {
+                            var lines = new object[LinesArraySize];
+                            for (int i = 0; i < LinesArraySize; i++)
+                            {
+                                if (i >= objectToDraw.Lines.GetLength(0))                       // Get length of first dimension, it represents number of lines
+                                {
+                                    lines[i] = CreateLine(0, 0, 0, 0);
+                                }
+                                else
+                                {
+                                    lines[i] = CreateLine(objectToDraw.Lines[i, 0], objectToDraw.Lines[i, 1],
+                                        objectToDraw.Lines[i, 2], objectToDraw.Lines[i, 3]);
+                                }
+                            }
+                            //    LinesArray.Write(lines);
+                            //    LinesToDrawCount.Write(objectToDraw.Lines.GetLength(0));
+                            //    DoneLinesCount.Write(1);
+                            //    StartDraw();
+                        }
+                        //while (!IsRobotIdle())
+                        //{
 
-            }
-            LastTool = currentTool;
-            ShapesPending.RepeatUntilEmpty();
+                        //}
+                        LastTool = objectToDraw.Colour;
+                    }
+                    RobotManagerThread.Suspend();
+                }
+                catch(ThreadAbortException ex)
+                {
+                    return;
+                }
         }
         public void ChangeRobotTool(Color currentTool)
-        {       
-            if(currentTool == Colors.White)
+        {
+            if (currentTool == Colors.White)
             {
                 SetGrabEraser();
             }
@@ -156,7 +189,7 @@ namespace RobotDrawer.Models
                     grabOffset = -45.0;
                 }
                 else if (currentTool == Colors.Green)
-                {                 
+                {
                     grabOffset = -90.0;
                 }
                 SetToolOffsetArray(dropOffset, grabOffset);
@@ -184,7 +217,6 @@ namespace RobotDrawer.Models
         #endregion
 
         #region Events
-        //public event EventHandler RobotWorkCompleted;
         #endregion
     }
 }

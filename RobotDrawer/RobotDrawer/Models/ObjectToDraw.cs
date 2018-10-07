@@ -13,11 +13,10 @@ namespace RobotDrawer.Models
             this.Colour = Colour;
             this.EraseAll = false;
         }
-        public ObjectToDraw(double[,] Lines, Color Colour, bool EraseAll)
+        public ObjectToDraw(bool EraseAll, Color Colour)
         {
-            this.Lines = Lines;
-            this.Colour = Colour;
             this.EraseAll = EraseAll;
+            this.Colour = Colour;
         }
     }
 }

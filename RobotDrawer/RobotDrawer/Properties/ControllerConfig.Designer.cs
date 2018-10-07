@@ -121,7 +121,7 @@ namespace RobotDrawer.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("360")]
+        [global::System.Configuration.DefaultSettingValueAttribute("100")]
         public string robotItemArraySize {
             get {
                 return ((string)(this["robotItemArraySize"]));

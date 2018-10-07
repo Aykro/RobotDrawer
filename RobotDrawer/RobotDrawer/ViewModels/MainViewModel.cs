@@ -1,11 +1,10 @@
 ﻿using MvvmDialogs;
 using RobotDrawer.Models;
-using RobotDrawer.Models.Exceptions;
 using RobotDrawer.Utils;
 using RobotDrawer.Views;
 using System;
 using System.Linq;
-using System.Timers;
+using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Ink;
@@ -18,12 +17,6 @@ namespace RobotDrawer.ViewModels
     {
         #region Parameters       
         private readonly IDialogService DialogService;
-        private Timer penSampling = new Timer()
-        {
-            Interval = 1,
-            Enabled = true,
-            AutoReset = true
-    };
         #region Drawing Properties
         private Func<StylusPoint[], StylusPointCollection> DrawShape;
         private Stroke lastStroke = null;
@@ -42,7 +35,7 @@ namespace RobotDrawer.ViewModels
             }
         }
         private DrawingAttributes _defaultDrawingAttributes = new DrawingAttributes();
-        private InkCanvasEditingMode _editingMode;
+        private InkCanvasEditingMode _editingMode = InkCanvasEditingMode.Ink;
         public InkCanvasEditingMode EditingMode
         {
             get
@@ -54,6 +47,19 @@ namespace RobotDrawer.ViewModels
                 _editingMode = value;
             }
         }
+        private bool _isInkCanvasEnabled;
+        public bool IsInkCanvasEnabled
+        {
+            get
+            {
+                return _isInkCanvasEnabled;
+            }
+            set
+            {
+                _isInkCanvasEnabled = value;
+            }
+        }
+
         public StrokeCollection Strokes
         {
             get
@@ -64,7 +70,7 @@ namespace RobotDrawer.ViewModels
         private StrokeCollection _strokes;
 
         #endregion
-
+       
         #region ButtonProperties
         public bool BlackRadiobuttonChecked
         {
@@ -167,12 +173,27 @@ namespace RobotDrawer.ViewModels
                 if (_eraserButtonChecked != value)
                 {
                     _eraserButtonChecked = value;
+                    ChangePencilColour();
                     OnPropertyChanged();
                     ChangeEditingMode();
                 }
             }
         }
-        private bool _penButtonChecked;
+        private bool _eraseAllButtonChecked;
+        public bool EraseAllButtonChecked
+        {
+            get { return _eraseAllButtonChecked; }
+            set
+            {
+                if(_eraseAllButtonChecked != value)
+                {
+                    _eraseAllButtonChecked = value;
+                    ClearCanvas();
+                    OnPropertyChanged();
+                }
+            }
+        }
+        private bool _penButtonChecked = true;
         public bool PenButtonChecked
         {
             get { return _penButtonChecked; }
@@ -194,13 +215,11 @@ namespace RobotDrawer.ViewModels
             set
             {
                 if (_connectButtonChecked != value)
-                {                
-                    Connect();
-                    if(IsRobotConnected == true)
-                    {
-                        _connectButtonChecked = value;
-                        OnPropertyChanged();
-                    }                  
+                {
+                    if (IsRobotConnected == false && value == true) Connect();
+
+                    _connectButtonChecked = value;
+                    OnPropertyChanged();
                 }
             }
         }
@@ -211,14 +230,11 @@ namespace RobotDrawer.ViewModels
             set
             {
                 if (_disconnectButtonChecked != value)
-                {
-                    
-                    Disconnect();
-                    if (IsRobotConnected == false)
-                    {
-                        _disconnectButtonChecked = value;
-                        OnPropertyChanged();
-                    }                  
+                {                   
+                    if(IsRobotConnected == true && value == true) Disconnect();
+
+                    _disconnectButtonChecked = value;
+                    OnPropertyChanged();
                 }
             }
         }
@@ -235,11 +251,6 @@ namespace RobotDrawer.ViewModels
         #endregion
 
         private bool AlwaysTrue() { return true; }
-        private bool CanExecuteShapes() {
-            if (EditingMode != InkCanvasEditingMode.None)
-                return false;
-            else return true;
-           }
 
         /// <summary>
         /// Title of the application, as displayed in the top bar of the window
@@ -273,9 +284,9 @@ namespace RobotDrawer.ViewModels
                 lastStroke.DrawingAttributes.Color = DefaultDrawingAttributes.Color;
                 Strokes.Add(lastStroke);
             }
-            else
+            else if(EditingMode == InkCanvasEditingMode.Ink & DefaultDrawingAttributes.Color == Colors.White)
             {
-
+                
             }
         }
         private void MouseMoveCommandExecuted(MouseEventArgs e)
@@ -290,63 +301,45 @@ namespace RobotDrawer.ViewModels
                     if (LineButtonChecked)
                     {
                         DrawShape = Shapes.DrawLine;
-                        newStrokes = DrawShape(_points);
                     }
                     if (RectangleButtonChecked)
                     {
                         DrawShape = Shapes.DrawRectangle;
-                        newStrokes = DrawShape(_points);
                     }
                     if (CircleButtonChecked)
                     {
-                        DrawShape = Shapes.DrawCircle;
-                        newStrokes = DrawShape(_points);
+                        DrawShape = Shapes.DrawCircle;                   
                     }
-                    if (PenButtonChecked)
-                    {
-                        //    newStrokes = new StylusPointCollection();
-                        //    if(e.LeftButton == MouseButtonState.Pressed)
-                        //    {
-                        //       // penSampling.Start();
-                        //       // penSampling.
-                        //        //newStrokes.Add(new StylusPoint(endPoint.X, endPoint.Y));
-                        //    }
-                        //    else
-                        //    {
-                        //        penSampling.Stop();
-                        //    }
-                    }
+
+                    newStrokes = DrawShape(_points);
                 }
                 if (newStrokes != null) lastStroke.StylusPoints = newStrokes;
             }
         }
-        private void OnSampleEvent(object source, ElapsedEventArgs e)
-        {
-            if (newStrokes == null) newStrokes = new StylusPointCollection();
-            newStrokes.Add(new StylusPoint(endPoint.X, endPoint.Y));
-        }
         private void MouseUpCommandExecuted()
         {
-            if (lastStroke != null)
-            {
-                var CanvasSize = App.GetCanvasSize();
-                var robotCoordinates = CoordinateScaler.ToRobotCoordinates(Strokes.Last(), CanvasSize[0], CanvasSize[1]);
-                var robotLines = Models.PointConverter.ToLine(robotCoordinates);
-                //ABBManager.Instance.ShapesPending.Enqueue(new ObjectToDraw(
-                //    robotLines, DefaultDrawingAttributes.Color));
-                lastStroke = null;
-            }
+            lastStroke = null;
+            var objectToDraw = PrepareDataToSend(Strokes.Last());
+            ABBManager.Instance.ShapesPending.Enqueue(objectToDraw);
+        }
+        private ObjectToDraw PrepareDataToSend(Stroke Last)
+        {
+            var CanvasSize = App.GetCanvasSize();
+            var filteredPoints = Shapes.FilterPoints(Last);
+            var robotCoordinates = CoordinateScaler.ToRobotCoordinates(filteredPoints, CanvasSize[0], CanvasSize[1]);
+            var robotLines = Models.PointConverter.ToLine(robotCoordinates);
+            return new ObjectToDraw(robotLines, DefaultDrawingAttributes.Color);
         }
         private void ChangeEditingMode()
         {
-            if (EraserButtonChecked)
-            {
-                EditingMode = InkCanvasEditingMode.EraseByPoint;
-            }
-            else if (PenButtonChecked)
+            if (EraserButtonChecked || PenButtonChecked)
             {
                 EditingMode = InkCanvasEditingMode.Ink;
             }
+            //else if (PenButtonChecked)
+            //{
+            //    EditingMode = InkCanvasEditingMode.Ink;
+            //}
             else
             {
                 EditingMode = InkCanvasEditingMode.None;
@@ -367,12 +360,17 @@ namespace RobotDrawer.ViewModels
             {
                 DefaultDrawingAttributes.Color = Colors.Green;
             }
+            if(EraserButtonChecked)
+            {
+                DefaultDrawingAttributes.Color = Colors.White;
+            }
             OnPropertyChanged("DefaultDrawingAttributes");
         }
         private void ClearCanvas()
         {
             Application.Current.Dispatcher.Invoke(new Action(() =>
             {
+                ABBManager.Instance.ShapesPending.Enqueue(new ObjectToDraw(EraseAll: true, Colour: Colors.White));
                 Strokes.Clear();
             }));
         }
@@ -383,14 +381,22 @@ namespace RobotDrawer.ViewModels
                 if (!IsRobotConnected)
                 {
                     ABBManager.Instance.Connect();
+                    if(ABBManager.Instance.RobotManagerThread.ThreadState == ThreadState.Suspended)
+                        ABBManager.Instance.RobotManagerThread.Resume();
                     IsRobotConnected = true;
-                    //OnPropertyChanged("IsEnabled");
+                    IsInkCanvasEnabled = true;
                 }
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"Connection error! Please contact support.");
                 IsRobotConnected = false;
+                IsInkCanvasEnabled = false;
+            }
+            finally
+            {
+                OnPropertyChanged("IsInkCanvasEnabled");
+                OnPropertyChanged("IsRobotConnected");
             }
         }
         private void Disconnect()
@@ -399,7 +405,9 @@ namespace RobotDrawer.ViewModels
             {
                 ABBManager.Instance.Disconnect();
                 IsRobotConnected = false;
-                OnPropertyChanged("IsEnabled");
+                OnPropertyChanged("IsRobotConnected");
+                IsInkCanvasEnabled = false;
+                OnPropertyChanged("IsInkCanvasEnabled");
             }
         }
         //private void ReadConfigFile()
@@ -421,7 +429,6 @@ namespace RobotDrawer.ViewModels
         #endregion
 
         #region Commands
-        public RelayCommand<object> SampleCmdWithArgument { get { return new RelayCommand<object>(OnSampleCmdWithArgument); } }
 
         public ICommand MouseUpCommand { get { return new RelayCommand(MouseUpCommandExecuted); } }
         public ICommand MouseDownCommand { get { return new RelayCommand<MouseEventArgs>(MouseDownCommandExecuted); } }

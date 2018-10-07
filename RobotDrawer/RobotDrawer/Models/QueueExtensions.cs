@@ -1,6 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using System.Threading;
 
 namespace RobotDrawer.Models
 {
@@ -20,48 +19,21 @@ namespace RobotDrawer.Models
         public virtual new void Enqueue(ObjectToDraw item)
         {
             base.Enqueue(item);
-            if (Count == 1)
+            if (Count == 1 && ABBManager.Instance.RobotManagerThread.ThreadState != ThreadState.Running)
             {
-                var objectToDraw = Dequeue();
-                OnQueueNotEmpty(this, objectToDraw);
+                if (ABBManager.Instance.RobotManagerThread.ThreadState == ThreadState.Unstarted)
+                {
+                    ABBManager.Instance.RobotManagerThread.Start();
+                }
+                else if(ABBManager.Instance.RobotManagerThread.ThreadState == ThreadState.Suspended)
+                {
+                    ABBManager.Instance.RobotManagerThread.Resume();
+                }
             }
         }
-        public virtual bool IsEmpty()
-        { 
-            if(Count == 0)
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
-        public virtual void RepeatUntilEmpty()
-        {
-            if (!IsEmpty())
-            {
-                var objectToDraw = Dequeue();
-                OnQueueNotEmpty(this, objectToDraw);
-            }
-            else
-            {
-                return;
-            }
-        }
-        public virtual void OnQueueNotEmpty(object sender, ObjectToDraw objectToDraw)
-        {
-            QueueNotEmpty?.Invoke(sender, new RobotWorkEventArgs(objectToDraw));
-            //var queueNotEmptyDelegate = QueueNotEmpty as EventHandler<RobotWorkEventArgs>;
-            //if (queueNotEmptyDelegate != null)
-            //{
-            //    queueNotEmptyDelegate(sender, new RobotWorkEventArgs(objectToDraw));
-            //}
-        }
-        #endregion
+       #endregion
 
         #region Events
-        public event EventHandler<RobotWorkEventArgs> QueueNotEmpty;
         #endregion
     }
 }

@@ -1,58 +1,67 @@
 ﻿<Window x:Class="RobotDrawer.Views.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" 
-        xmlns:system="clr-namespace:System;assembly=mscorlib"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:RobotDrawer.Views"
-        xmlns:localVMs="clr-namespace:RobotDrawer.ViewModels"
-        xmlns:localModels="clr-namespace:RobotDrawer.Models"
-        xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
-        xmlns:md="https://github.com/fantasticfiasco/mvvm-dialogs"
         xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
-        xmlns:command="http://www.galasoft.ch/mvvmlight"
-        xmlns:beh ="clr-namespace:RobotDrawer.Behaviours"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:beh="clr-namespace:RobotDrawer.Behaviours"
+        xmlns:md="https://github.com/fantasticfiasco/mvvm-dialogs"
         md:DialogServiceViews.IsRegistered="True"
         mc:Ignorable="d"
-        Title="{Binding Title}" Height="768" Width="1024"
+        Title="{Binding Title}" Height="768" Width="1280"
         WindowState="Normal">
 
     <Window.Resources>
         <Style x:Key="ColourPickStyle"
-               TargetType="RadioButton">
+               TargetType="ToggleButton">
             <Setter Property="BorderBrush"
                     Value="Gray"/>
             <Setter Property="Height"
                     Value="25"/>
             <Setter Property="Width"
-                    Value="30"/>
+                    Value="25"/>
+            <Setter Property="VerticalAlignment"
+                    Value="Center"/>
+            <Setter Property="HorizontalAlignment"
+                    Value="Center"/>
             <Setter Property="Cursor"
                     Value="Pen"/>
         </Style>
-        <Style x:Key="ShapeButtonStyle"
-               TargetType="RadioButton">
+        <Style x:Key="ShapeRadioButtonStyle"
+               TargetType="ToggleButton">
             <Setter Property="BorderBrush"
-                    Value="Gray"/>
+                    Value="LightGray"/>
             <Setter Property="Height"
-                    Value="25"/>
+                    Value="auto"/>
             <Setter Property="Width"
-                    Value="60"/>
+                    Value="auto"/>
             <Setter Property="Background"
-                    Value="GhostWhite"/>
+                    Value="WhiteSmoke"/>
+            <Setter Property="Margin"
+                    Value="2"/>
+            <Setter Property="Cursor"
+                    Value="Hand"/>
         </Style>
-        <!-- Insert here your Data Templates -->
-        <DataTemplate x:Key="SampleTemplate">
-            <StackPanel/>
-        </DataTemplate>
+        <Style x:Key="ShapeButtonStyle"
+               TargetType="Button">
+            <Setter Property="BorderBrush"
+                    Value="LightGray"/>
+            <Setter Property="Height"
+                    Value="auto"/>
+            <Setter Property="Width"
+                    Value="auto"/>
+            <Setter Property="Background"
+                    Value="WhiteSmoke"/>
+            <Setter Property="Margin"
+                    Value="2"/>
+        </Style>
 
     </Window.Resources>
     <Window.InputBindings>
-        <KeyBinding Command="{Binding ReadConfigFileCommand}" Gesture="Ctrl+O" />
-        <KeyBinding Command="{Binding ClearCanvasCommand}" Gesture="Ctrl+R" />
-        <KeyBinding Command="{Binding ExitCmd}" Gesture="Alt+F4" />
+        <KeyBinding Command="{Binding ClearCanvasCommand}" Gesture="Ctrl+N"/>
     </Window.InputBindings>
 
-    
+
     <DockPanel>
         <!-- File Menu -->
         <Menu DockPanel.Dock="Top" Margin="0,0,0.4,0">
@@ -64,59 +73,92 @@
             </MenuItem>
             <MenuItem Header="About" Command="{Binding ShowAboutDialogCmd}"/>
         </Menu>
-        <DockPanel>
+        <DockPanel Background="LightGray">
             <!-- Toolbar -->
-            <ToolBar Name="ToolBar"
-                 DockPanel.Dock="Top"
-                 Height="30">
+            <ToolBar Name="ToolBar" DockPanel.Dock="Top" Background="AliceBlue"
+                 Height="auto" MaxHeight="80">
+                   
+         
                 <RadioButton x:Name ="BlackButton" Background="Black" 
-                                 Style ="{StaticResource ColourPickStyle}" 
+                                 Style ="{StaticResource ColourPickStyle}"
                                  IsChecked="{Binding BlackRadiobuttonChecked}"/>
-                <RadioButton Name ="RedButton" Background="Red"
+                <RadioButton Name ="RedButton" Background="Red" 
                                  Style="{StaticResource ColourPickStyle}"
                                  IsChecked="{Binding RedRadiobuttonChecked}"/>
-                <RadioButton Name = "GreenButton" Background="Green"
+                <RadioButton Name = "GreenButton" Background="Green" 
                                  Style="{StaticResource ColourPickStyle}"
                                  IsChecked="{Binding GreenRadiobuttonChecked}"/>
+                   
 
-                <Separator Background="Gray" Height="25" Width="1"/>
+                <Separator Background="Gray" Height="60" Width="2" Margin="5"/>
 
-                <RadioButton Name="PenButton" Content="Pen"
-                                 GroupName="ShapeGroup" Style="{StaticResource ShapeButtonStyle}"
-                                 IsChecked="{Binding PenButtonChecked}"/>
-                <RadioButton x:Name="LineButton"  Content="Line" 
-                                 GroupName="ShapeGroup" Style="{StaticResource ShapeButtonStyle}"
-                                 IsChecked="{Binding LineButtonChecked}"/>
-                <RadioButton x:Name="RectangleButton" Content="Rectangle" 
-                                 GroupName="ShapeGroup" Style="{StaticResource ShapeButtonStyle}"
-                                 IsChecked="{Binding RectangleButtonChecked}"/>
-                <RadioButton x:Name="CircleButton" Content="Circle"
-                                 GroupName="ShapeGroup" Style="{StaticResource ShapeButtonStyle}"
-                                 IsChecked="{Binding CircleButtonChecked}"/>
-                <RadioButton x:Name="Eraser" Content="Eraser"
-                                 GroupName="ShapeGroup" Style="{StaticResource ShapeButtonStyle}"
-                                 IsChecked="{Binding EraserButtonChecked}"/>
+                <Button x:Name="EraseAll"
+                             Style="{StaticResource ShapeButtonStyle}">
+                    <Image x:Name="EraseAllIcon" Stretch="Uniform" 
+                           Source="C:\Users\Marcin Pochrzęst\Desktop\Studia\Praca inżynierska\RobotDrawer\Icons\BlankIcon.png"/>
+                    <i:Interaction.Triggers>
+                        <i:EventTrigger EventName="Click">
+                            <i:InvokeCommandAction Command="{Binding ClearCanvasCommand}"/>
+                        </i:EventTrigger>
+                    </i:Interaction.Triggers>
+                </Button>
+                <RadioButton Name="PenButton"
+                                 GroupName="ShapeGroup" Style="{StaticResource ShapeRadioButtonStyle}"
+                                 IsChecked="{Binding PenButtonChecked}">
+                    <Image x:Name="PenIcon" Stretch="Uniform" 
+                           Source="C:\Users\Marcin Pochrzęst\Desktop\Studia\Praca inżynierska\RobotDrawer\Icons\PencilIcon.png"/>
+                </RadioButton>
+                <RadioButton x:Name="Eraser" Style="{StaticResource ShapeRadioButtonStyle}"
+                                 GroupName="ShapeGroup" IsChecked="{Binding EraserButtonChecked}">
+                    <Image x:Name="EraserIcon" Stretch="Uniform"
+                           Source="C:\Users\Marcin Pochrzęst\Desktop\Studia\Praca inżynierska\RobotDrawer\Icons\EraserIcon.png"/>
+                </RadioButton>
 
-                <Separator Background="Gray" Height="25" Width="1"/>
+                <RadioButton x:Name="LineButton" Style="{StaticResource ShapeRadioButtonStyle}"
+                                GroupName="ShapeGroup" IsChecked="{Binding LineButtonChecked}">
+                    <Image x:Name="LineIcon" Stretch="Uniform" 
+                           Source="C:\Users\Marcin Pochrzęst\Desktop\Studia\Praca inżynierska\RobotDrawer\Icons\LineIcon.png" />
+                </RadioButton>
+                <RadioButton x:Name="RectangleButton" Style="{StaticResource ShapeRadioButtonStyle}"
+                                 GroupName="ShapeGroup" IsChecked="{Binding RectangleButtonChecked}">
+                    <Image x:Name="RectangleIcon" Stretch="Uniform" 
+                           Source="C:\Users\Marcin Pochrzęst\Desktop\Studia\Praca inżynierska\RobotDrawer\Icons\RectangleIcon.png"/>
+                </RadioButton>
+                <RadioButton x:Name="CircleButton" Style="{StaticResource ShapeRadioButtonStyle}"
+                                  GroupName="ShapeGroup" IsChecked="{Binding CircleButtonChecked}">
+                    <Image x:Name="CircleIcon" Stretch="Uniform" 
+                           Source="C:\Users\Marcin Pochrzęst\Desktop\Studia\Praca inżynierska\RobotDrawer\Icons\CircleIcon.png"/>
+                </RadioButton>
+                
+                
 
+                <Separator Background="Gray" Height="70" Width="2" Margin="5"/>
+
+                
                 <RadioButton Name="ConnectButton"
-                         Style="{StaticResource ShapeButtonStyle}"
+                         Style="{StaticResource ShapeRadioButtonStyle}"
                          Content="Connect" IsChecked="{Binding ConnectButtonChecked}"
-                                 IsEnabled="{Binding !IsRobotConnected}"/>
+                                 />
                 <RadioButton Name="DisconnectButton"
-                         Style="{StaticResource ShapeButtonStyle}"
+                         Style="{StaticResource ShapeRadioButtonStyle}"
                          Content="Disconnect" IsChecked="{Binding DisconnectButtonChecked}"
-                                 IsEnabled="{Binding IsRobotConnected}"/>
+                                 />
             </ToolBar>
             <!-- Canvas-->
             <InkCanvas x:Name="MyCanvas" Background="White" Margin="10"
                            EditingMode="{Binding EditingMode, Mode=TwoWay}"
-                           Height="670" Width="883" 
+                           Height="15.0cm" Width="30.0cm" IsEnabled="{Binding IsInkCanvasEnabled}"
                            Strokes="{Binding Strokes}" DockPanel.Dock="Bottom"
                            DefaultDrawingAttributes="{Binding DefaultDrawingAttributes, Mode=OneWay}">
                 <InkCanvas.ContextMenu>
                     <ContextMenu>
-                        <MenuItem Header="Clear canvas"/>
+                        <MenuItem Header="Clear canvas">
+                            <i:Interaction.Triggers>
+                                <i:EventTrigger EventName="Click">
+                                    <i:InvokeCommandAction Command="{Binding ClearCanvasCommand}"/>
+                                </i:EventTrigger>
+                            </i:Interaction.Triggers>
+                        </MenuItem>
                     </ContextMenu>
                 </InkCanvas.ContextMenu>
                 <i:Interaction.Behaviors>
@@ -127,11 +169,6 @@
                     <beh:EventToCommandBehavior Command="{Binding MouseUpCommand}"
                                                     Event="MouseLeftButtonUp" PassArguments="True"/>
                 </i:Interaction.Behaviors>
-                <i:Interaction.Triggers>
-                    <i:EventTrigger EventName="ContextMenuOpening">
-                        <i:InvokeCommandAction Command="{Binding ClearCanvasCommand}"/>
-                    </i:EventTrigger>
-                </i:Interaction.Triggers>
             </InkCanvas>
         </DockPanel>
     </DockPanel>
